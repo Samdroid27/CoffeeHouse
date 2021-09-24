@@ -54,7 +54,7 @@ class Blockchain:
         return [block, hash_operation, flag]
     
     def hash(self, block):
-        encoded_block = json.dumps(block, sort_keys = True).encode()
+        encoded_block = json.dumps(block).encode()
         return hashlib.sha256(encoded_block).hexdigest()
     
     def is_chain_valid(self, chain):
@@ -64,9 +64,10 @@ class Blockchain:
             block = chain[block_index]
             if block['previous_hash'] != self.hash(previous_block):
                 return False
-            previous_proof = previous_block['proof']
-            proof = block['proof']
-            hash_operation = hashlib.sha256(str(proof**2 - previous_proof**2).encode()).hexdigest()
+            # previous_proof = previous_block['proof']
+            # proof = block['proof']
+            encoded_block = json.dumps(block).encode()
+            hash_operation = hashlib.sha256(encoded_block).hexdigest()
             if hash_operation[:4] != '0000':
                 return False
             previous_block = block
@@ -192,4 +193,4 @@ def replace_chain():
     return jsonify(response), 200
 
 # Running the app
-app.run(host = '0.0.0.0', port = 5002)
+app.run(host = '127.0.0.1', port = 5002)
