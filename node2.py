@@ -39,6 +39,18 @@ class Blockchain:
     def get_previous_block(self):
         return self.chain[-1]
 
+    def get_block(self, block_index):
+        block = []
+        if block_index > len(self.chain):
+            return block
+        block.append(self.chain[block_index - 1])
+        return block
+
+    def get_timestamp(self, block_index):
+        if block_index > len(self.chain):
+            return -1
+        return self.chain[block_index - 1]['timestamp']
+
     def proof_of_work(self, block):
         new_proof = 1
         check_proof = False
@@ -51,7 +63,6 @@ class Blockchain:
                 check_proof = True
             else:
                 new_proof += 1
-        # go and ask others and set flag
         return [block, hash_operation, flag]
 
     def hash(self, block):
@@ -92,7 +103,7 @@ class Blockchain:
         longest_chain = None
         max_length = len(self.chain)
         for node in network:
-            response = requests.get(f'http://{node}/get_chain')
+            response = requests.get(f'http://{node}/get_node_chain')
             if response.status_code == 200:
                 length = response.json()['length']
                 chain = response.json()['chain']
@@ -128,8 +139,6 @@ def mine_block():
     [block, cur_hash, flag] = blockchain.proof_of_work(block)
     if flag:
         blockchain.chain.append(block)
-        # blockchain.add_transaction(sender = node_address, receiver = 'Hadelin', amount = 1)
-        # block = blockchain.create_block(proof, previous_hash)
         response = {'message': 'Congratulations, you just mined a block!',
                     'index': block['index'],
                     'timestamp': block['timestamp'],
@@ -143,10 +152,19 @@ def mine_block():
 
 
 # Getting the full Blockchain
-@app.route('/get_chain', methods=['GET'])
-def get_chain():
+@app.route('/get_node_chain', methods = ['GET'])
+def get_node_chain():
     response = {'chain': blockchain.chain,
                 'length': len(blockchain.chain)}
+    return jsonify(response), 200
+
+@app.route('/get_chain', methods = ['GET'])
+def get_chain():
+    output = []
+    for block in blockchain.chain:
+        cur_hash = blockchain.hash(block)
+        output.append({'block':block, 'cur_hash':cur_hash})
+    response = {'Chain': output, 'Length': len(output)}
     return jsonify(response), 200
 
 
@@ -170,6 +188,34 @@ def add_transaction():
         return 'Some elements of the transaction are missing', 400
     index = blockchain.add_transaction(json['Customer'], json['Receiver'], json['Order Details'], json['Order Amount'])
     response = {'message': f'This transaction will be added to Block {index}'}
+    return jsonify(response), 201
+
+
+@app.route('/get_block', methods=['POST'])
+def get_block():
+    json = request.get_json()
+    block_index = json.get('index')
+    block = blockchain.get_block(block_index)
+    if len(block) == 0:
+        response = {'message': 'Invalid block index'}
+    else:
+        block_hash = blockchain.hash(block[0])
+        response = {'Block': block[0],
+                    'Block Hash': block_hash
+                    }
+    return jsonify(response), 201
+
+
+@app.route('/get_timestamp', methods=['POST'])
+def get_timestamp():
+    json = request.get_json()
+    block_index = json.get('index')
+    block_timestamp = blockchain.get_timestamp(block_index)
+    if block_timestamp == -1:
+        response = {'message': 'Invalid block index'}
+    else:
+        response = {'Block timestamp': block_timestamp
+                    }
     return jsonify(response), 201
 
 
