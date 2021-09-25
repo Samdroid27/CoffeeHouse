@@ -44,7 +44,7 @@ class Blockchain:
         flag = 1
         while check_proof is False:
             block['proof'] = new_proof
-            encoded_block = json.dumps(block).encode()
+            encoded_block = json.dumps(block, sort_keys = True).encode()
             hash_operation = hashlib.sha256(encoded_block).hexdigest()
             if hash_operation[:4] == '0000':
                 check_proof = True
@@ -54,7 +54,7 @@ class Blockchain:
         return [block, hash_operation, flag]
     
     def hash(self, block):
-        encoded_block = json.dumps(block).encode()
+        encoded_block = json.dumps(block, sort_keys = True).encode()
         return hashlib.sha256(encoded_block).hexdigest()
     
     def is_chain_valid(self, chain):
@@ -66,7 +66,7 @@ class Blockchain:
                 return False
             # previous_proof = previous_block['proof']
             # proof = block['proof']
-            encoded_block = json.dumps(block).encode()
+            encoded_block = json.dumps(block, sort_keys = True).encode()
             hash_operation = hashlib.sha256(encoded_block).hexdigest()
             if hash_operation[:4] != '0000':
                 return False
@@ -117,6 +117,7 @@ blockchain = Blockchain()
 # Mining a new block
 @app.route('/mine_block', methods = ['GET'])
 def mine_block():
+    flag = blockchain.replace_chain()
     previous_block = blockchain.get_previous_block()
     # previous_proof = previous_block['proof']
     previous_hash = blockchain.hash(previous_block)
