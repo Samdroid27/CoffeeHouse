@@ -38,6 +38,18 @@ class Blockchain:
     def get_previous_block(self):
         return self.chain[-1]
 
+    def get_block(self,block_index):
+        block = []
+        if block_index > len(self.chain):
+            return block
+        block.append(self.chain[block_index-1])
+        return block
+
+    def get_timestamp(self,block_index):
+        if block_index > len(self.chain):
+            return -1
+        return self.chain[block_index-1]['timestamp']
+
     def proof_of_work(self, block):
         new_proof = 1
         check_proof = False
@@ -46,11 +58,10 @@ class Blockchain:
             block['proof'] = new_proof
             encoded_block = json.dumps(block, sort_keys = True).encode()
             hash_operation = hashlib.sha256(encoded_block).hexdigest()
-            if hash_operation[:4] == '0000':
+            if hash_operation[:4] == '000000':
                 check_proof = True
             else:
                 new_proof += 1
-        # go and ask others and set flag
         return [block, hash_operation, flag]
     
     def hash(self, block):
@@ -68,7 +79,7 @@ class Blockchain:
             # proof = block['proof']
             encoded_block = json.dumps(block, sort_keys = True).encode()
             hash_operation = hashlib.sha256(encoded_block).hexdigest()
-            if hash_operation[:4] != '0000':
+            if hash_operation[:4] != '000000':
                 return False
             previous_block = block
             block_index += 1
@@ -125,8 +136,6 @@ def mine_block():
     [block, cur_hash, flag] = blockchain.proof_of_work(block)
     if flag :
         blockchain.chain.append(block)
-        # blockchain.add_transaction(sender = node_address, receiver = 'Hadelin', amount = 1)
-        # block = blockchain.create_block(proof, previous_hash)
         response = {'message': 'Congratulations, you just mined a block!',
                     'index': block['index'],
                     'timestamp': block['timestamp'],
@@ -165,6 +174,33 @@ def add_transaction():
     index = blockchain.add_transaction(json['Customer'], json['Receiver'], json['Order Details'], json['Order Amount'])
     response = {'message': f'This transaction will be added to Block {index}'}
     return jsonify(response), 201
+
+@app.route('/get_block', methods = ['POST'])
+def get_block():
+    json = request.get_json()
+    block_index = json.get('index')
+    block = blockchain.get_block(block_index)
+    if len(block) == 0:
+        response = {'message' : 'Invalid block index'}
+    else:
+        block_hash = blockchain.hash(block[0])
+        response = {'Block': block[0],
+                    'Block Hash': block_hash
+                    }
+    return jsonify(response), 201
+
+@app.route('/get_timestamp', methods = ['POST'])
+def get_timestamp():
+    json = request.get_json()
+    block_index = json.get('index')
+    block_timestamp = blockchain.get_timestamp(block_index)
+    if block_timestamp == -1:
+        response = {'message' : 'Invalid block index'}
+    else:
+        response = {'Block timestamp': block_timestamp
+                    }
+    return jsonify(response), 201
+
 
 # Part 3 - Decentralizing our Blockchain
 
