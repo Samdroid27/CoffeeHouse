@@ -18,6 +18,7 @@ import hashlib
 from uuid import uuid4
 from urllib.parse import urlparse
 
+
 # create Blockchain blueprint
 class Blockchain:
 
@@ -40,7 +41,6 @@ class Blockchain:
 
         # emptying the transaction pool after adding to the block
         self.transactions_pool = []
-
         if len(self.chain) == 0:
             self.chain.append(block)
         return block
@@ -102,11 +102,12 @@ class Blockchain:
         return True
 
     # adding a transaction into the current pool of transactions before adding them into a block
-    def add_transaction(self, customer, receiver, order, amount):
+    def add_transaction(self, customer, receiver, order, orderdatetime, amount):
         self.transactions_pool.append({'Customer': customer,
                                        'Receiver': receiver,
                                        'Order Details': order,
-                                       'Order Amount': amount})
+                                       'Order Amount': amount,
+                                       'Order DateTime': orderdatetime})
 
     # adding a node into the network of connected nodes maintaining blockchain
     def add_node(self, address):
@@ -143,6 +144,7 @@ node_address = str(uuid4()).replace('-', '')
 # creating an object of the Blockchain class
 blockchain = Blockchain()
 
+
 # making connections between the nodes
 # the nodes to be connected are provided in JSON format during API call
 @app.route('/make_connections', methods=['POST'])
@@ -166,13 +168,8 @@ def add_transaction():
     transaction_keys = ['Customer', 'Receiver', 'Order Details', 'Order Amount']
     if not all(key in json for key in transaction_keys):
         return 'Some elements of the transaction are missing', 400
-    blockchain.add_transaction(json['Customer'], json['Receiver'], json['Order Details'], json['Order Amount'])
-    response = {'message': 'This transaction is successfully added to the Transaction Pool. It will be mined where there are atleast 3 transactions in the Pool.'}
-
-    # a block can store a maximum of 3 transactions
-    # as soon as there are 3 unverified transactions in the pool, the transaction pool is emptied into the block and the block is mined
-    if len(blockchain.transactions_pool) == 3:
-        return mine_block()
+    blockchain.add_transaction(json['Customer'], json['Receiver'], json['Order Details'], str(datetime.datetime.now()), json['Order Amount'])
+    response = {'message': 'This transaction is successfully added to the Transaction Pool. '}
     return jsonify(response), 201
 
 
@@ -199,11 +196,11 @@ def mine_block():
 
 # retrieving the complete chain details of the node provided
 @app.route('/get_node_chain', methods=['GET'])
-
 def get_node_chain():
     response = {'chain': blockchain.chain,
                 'length': len(blockchain.chain)}
     return jsonify(response), 200
+
 
 # display the complete chain details along with corresponding hash values for all blocks
 @app.route('/get_chain', methods=['GET'])
@@ -225,6 +222,7 @@ def is_valid():
     else:
         response = {'message': 'Invalid Blockchain'}
     return jsonify(response), 200
+
 
 # displaying the details of a specific block
 # block index is provided in JSON format during API call
@@ -255,6 +253,7 @@ def get_timestamp():
     else:
         response = {'Block timestamp': block_timestamp}
     return jsonify(response), 201
+
 
 # updating the chain to the latest chain in the network and displaying the updated chain
 @app.route('/update_chain', methods=['GET'])
