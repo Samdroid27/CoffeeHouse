@@ -14,6 +14,7 @@ import requests
 from uuid import uuid4
 from urllib.parse import urlparse
 
+
 # Part 1 - Building a Blockchain
 
 class Blockchain:
@@ -21,9 +22,9 @@ class Blockchain:
     def __init__(self):
         self.chain = []
         self.transactions = []
-        self.create_block(previous_hash = '0')
+        self.create_block(previous_hash='0')
         self.nodes = set()
-    
+
     def create_block(self, previous_hash):
         block = {'index': len(self.chain) + 1,
                  'timestamp': str(datetime.datetime.now()),
@@ -31,24 +32,26 @@ class Blockchain:
                  'previous_hash': previous_hash,
                  'transactions': self.transactions}
         self.transactions = []
-        if len(self.chain) == 0 :
+        if len(self.chain) == 0:
             self.chain.append(block)
         return block
 
     def get_previous_block(self):
         return self.chain[-1]
 
-    def get_block(self,block_index):
+
+    def get_block(self, block_index):
         block = []
         if block_index > len(self.chain):
             return block
-        block.append(self.chain[block_index-1])
+        block.append(self.chain[block_index - 1])
         return block
 
-    def get_timestamp(self,block_index):
+    def get_timestamp(self, block_index):
         if block_index > len(self.chain):
             return -1
-        return self.chain[block_index-1]['timestamp']
+        return self.chain[block_index - 1]['timestamp']
+
 
     def proof_of_work(self, block):
         new_proof = 1
@@ -56,18 +59,18 @@ class Blockchain:
         flag = 1
         while check_proof is False:
             block['proof'] = new_proof
-            encoded_block = json.dumps(block, sort_keys = True).encode()
+            encoded_block = json.dumps(block, sort_keys=True).encode()
             hash_operation = hashlib.sha256(encoded_block).hexdigest()
             if hash_operation[:4] == '000000':
                 check_proof = True
             else:
                 new_proof += 1
         return [block, hash_operation, flag]
-    
+
     def hash(self, block):
-        encoded_block = json.dumps(block, sort_keys = True).encode()
+        encoded_block = json.dumps(block, sort_keys=True).encode()
         return hashlib.sha256(encoded_block).hexdigest()
-    
+
     def is_chain_valid(self, chain):
         previous_block = chain[0]
         block_index = 1
@@ -77,14 +80,14 @@ class Blockchain:
                 return False
             # previous_proof = previous_block['proof']
             # proof = block['proof']
-            encoded_block = json.dumps(block, sort_keys = True).encode()
+            encoded_block = json.dumps(block, sort_keys=True).encode()
             hash_operation = hashlib.sha256(encoded_block).hexdigest()
             if hash_operation[:4] != '000000':
                 return False
             previous_block = block
             block_index += 1
         return True
-    
+
     def add_transaction(self, customer, receiver, order, amount):
         self.transactions.append({'Customer': customer,
                                   'Receiver': receiver,
@@ -92,17 +95,17 @@ class Blockchain:
                                   'Order Amount': amount})
         previous_block = self.get_previous_block()
         return previous_block['index'] + 1
-    
+
     def add_node(self, address):
         parsed_url = urlparse(address)
         self.nodes.add(parsed_url.netloc)
-    
+
     def replace_chain(self):
         network = self.nodes
         longest_chain = None
         max_length = len(self.chain)
         for node in network:
-            response = requests.get(f'http://{node}/get_chain')
+            response = requests.get(f'http://{node}/get_node_chain')
             if response.status_code == 200:
                 length = response.json()['length']
                 chain = response.json()['chain']
@@ -113,6 +116,7 @@ class Blockchain:
             self.chain = longest_chain
             return True
         return False
+
 
 # Part 2 - Mining our Blockchain
 
@@ -125,8 +129,9 @@ node_address = str(uuid4()).replace('-', '')
 # Creating a Blockchain
 blockchain = Blockchain()
 
+
 # Mining a new block
-@app.route('/mine_block', methods = ['GET'])
+@app.route('/mine_block', methods=['GET'])
 def mine_block():
     flag = blockchain.replace_chain()
     previous_block = blockchain.get_previous_block()
@@ -134,7 +139,7 @@ def mine_block():
     previous_hash = blockchain.hash(previous_block)
     block = blockchain.create_block(previous_hash)
     [block, cur_hash, flag] = blockchain.proof_of_work(block)
-    if flag :
+    if flag:
         blockchain.chain.append(block)
         response = {'message': 'Congratulations, you just mined a block!',
                     'index': block['index'],
@@ -143,19 +148,30 @@ def mine_block():
                     'previous_hash': block['previous_hash'],
                     'transactions': block['transactions'],
                     'current_hash': cur_hash}
-    else :
+    else:
         response = {'message': 'Do not mined, but you could not mine'}
     return jsonify(response), 200
 
+
 # Getting the full Blockchain
-@app.route('/get_chain', methods = ['GET'])
-def get_chain():
+@app.route('/get_node_chain', methods = ['GET'])
+def get_node_chain():
     response = {'chain': blockchain.chain,
                 'length': len(blockchain.chain)}
     return jsonify(response), 200
 
+@app.route('/get_chain', methods = ['GET'])
+def get_chain():
+    output = []
+    for block in blockchain.chain:
+        cur_hash = blockchain.hash(block)
+        output.append({'block':block, 'cur_hash':cur_hash})
+    response = {'Chain': output, 'Length': len(output)}
+    return jsonify(response), 200
+
+
 # Checking if the Blockchain is valid
-@app.route('/is_valid', methods = ['GET'])
+@app.route('/is_valid', methods=['GET'])
 def is_valid():
     is_valid = blockchain.is_chain_valid(blockchain.chain)
     if is_valid:
@@ -164,8 +180,9 @@ def is_valid():
         response = {'message': 'We have a problem. The Blockchain is not valid.'}
     return jsonify(response), 200
 
+
 # Adding a new transaction to the Blockchain
-@app.route('/add_transaction', methods = ['POST'])
+@app.route('/add_transaction', methods=['POST'])
 def add_transaction():
     json = request.get_json()
     transaction_keys = ['Customer', 'Receiver', 'Order Details', 'Order Amount']
@@ -175,13 +192,16 @@ def add_transaction():
     response = {'message': f'This transaction will be added to Block {index}'}
     return jsonify(response), 201
 
-@app.route('/get_block', methods = ['POST'])
+
+
+@app.route('/get_block', methods=['POST'])
+
 def get_block():
     json = request.get_json()
     block_index = json.get('index')
     block = blockchain.get_block(block_index)
     if len(block) == 0:
-        response = {'message' : 'Invalid block index'}
+        response = {'message': 'Invalid block index'}
     else:
         block_hash = blockchain.hash(block[0])
         response = {'Block': block[0],
@@ -189,13 +209,14 @@ def get_block():
                     }
     return jsonify(response), 201
 
-@app.route('/get_timestamp', methods = ['POST'])
+@app.route('/get_timestamp', methods=['POST'])
+
 def get_timestamp():
     json = request.get_json()
     block_index = json.get('index')
     block_timestamp = blockchain.get_timestamp(block_index)
     if block_timestamp == -1:
-        response = {'message' : 'Invalid block index'}
+        response = {'message': 'Invalid block index'}
     else:
         response = {'Block timestamp': block_timestamp
                     }
@@ -205,7 +226,7 @@ def get_timestamp():
 # Part 3 - Decentralizing our Blockchain
 
 # Connecting new nodes
-@app.route('/connect_node', methods = ['POST'])
+@app.route('/connect_node', methods=['POST'])
 def connect_node():
     json = request.get_json()
     nodes = json.get('nodes')
@@ -217,8 +238,9 @@ def connect_node():
                 'total_nodes': list(blockchain.nodes)}
     return jsonify(response), 201
 
+
 # Replacing the chain by the longest chain if needed
-@app.route('/replace_chain', methods = ['GET'])
+@app.route('/replace_chain', methods=['GET'])
 def replace_chain():
     is_chain_replaced = blockchain.replace_chain()
     if is_chain_replaced:
@@ -229,5 +251,6 @@ def replace_chain():
                     'actual_chain': blockchain.chain}
     return jsonify(response), 200
 
+
 # Running the app
-app.run(host = '127.0.0.1', port = 5000)
+app.run(host='127.0.0.1', port=5000)

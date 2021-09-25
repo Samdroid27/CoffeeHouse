@@ -103,7 +103,7 @@ class Blockchain:
         longest_chain = None
         max_length = len(self.chain)
         for node in network:
-            response = requests.get(f'http://{node}/get_chain')
+            response = requests.get(f'http://{node}/get_node_chain')
             if response.status_code == 200:
                 length = response.json()['length']
                 chain = response.json()['chain']
@@ -152,10 +152,19 @@ def mine_block():
 
 
 # Getting the full Blockchain
-@app.route('/get_chain', methods=['GET'])
-def get_chain():
+@app.route('/get_node_chain', methods = ['GET'])
+def get_node_chain():
     response = {'chain': blockchain.chain,
                 'length': len(blockchain.chain)}
+    return jsonify(response), 200
+
+@app.route('/get_chain', methods = ['GET'])
+def get_chain():
+    output = []
+    for block in blockchain.chain:
+        cur_hash = blockchain.hash(block)
+        output.append({'block':block, 'cur_hash':cur_hash})
+    response = {'Chain': output, 'Length': len(output)}
     return jsonify(response), 200
 
 
