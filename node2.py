@@ -14,6 +14,7 @@ import requests
 from uuid import uuid4
 from urllib.parse import urlparse
 
+
 # Part 1 - Building a Blockchain
 
 class Blockchain:
@@ -21,9 +22,9 @@ class Blockchain:
     def __init__(self):
         self.chain = []
         self.transactions = []
-        self.create_block(previous_hash = '0')
+        self.create_block(previous_hash='0')
         self.nodes = set()
-    
+
     def create_block(self, previous_hash):
         block = {'index': len(self.chain) + 1,
                  'timestamp': str(datetime.datetime.now()),
@@ -31,7 +32,7 @@ class Blockchain:
                  'previous_hash': previous_hash,
                  'transactions': self.transactions}
         self.transactions = []
-        if len(self.chain) == 0 :
+        if len(self.chain) == 0:
             self.chain.append(block)
         return block
 
@@ -44,7 +45,7 @@ class Blockchain:
         flag = 1
         while check_proof is False:
             block['proof'] = new_proof
-            encoded_block = json.dumps(block, sort_keys = True).encode()
+            encoded_block = json.dumps(block, sort_keys=True).encode()
             hash_operation = hashlib.sha256(encoded_block).hexdigest()
             if hash_operation[:4] == '0000':
                 check_proof = True
@@ -52,11 +53,11 @@ class Blockchain:
                 new_proof += 1
         # go and ask others and set flag
         return [block, hash_operation, flag]
-    
+
     def hash(self, block):
-        encoded_block = json.dumps(block, sort_keys = True).encode()
+        encoded_block = json.dumps(block, sort_keys=True).encode()
         return hashlib.sha256(encoded_block).hexdigest()
-    
+
     def is_chain_valid(self, chain):
         previous_block = chain[0]
         block_index = 1
@@ -66,14 +67,14 @@ class Blockchain:
                 return False
             # previous_proof = previous_block['proof']
             # proof = block['proof']
-            encoded_block = json.dumps(block, sort_keys = True).encode()
+            encoded_block = json.dumps(block, sort_keys=True).encode()
             hash_operation = hashlib.sha256(encoded_block).hexdigest()
             if hash_operation[:4] != '0000':
                 return False
             previous_block = block
             block_index += 1
         return True
-    
+
     def add_transaction(self, customer, receiver, order, amount):
         self.transactions.append({'Customer': customer,
                                   'Receiver': receiver,
@@ -81,11 +82,11 @@ class Blockchain:
                                   'Order Amount': amount})
         previous_block = self.get_previous_block()
         return previous_block['index'] + 1
-    
+
     def add_node(self, address):
         parsed_url = urlparse(address)
         self.nodes.add(parsed_url.netloc)
-    
+
     def replace_chain(self):
         network = self.nodes
         longest_chain = None
@@ -103,6 +104,7 @@ class Blockchain:
             return True
         return False
 
+
 # Part 2 - Mining our Blockchain
 
 # Creating a Web App
@@ -114,8 +116,9 @@ node_address = str(uuid4()).replace('-', '')
 # Creating a Blockchain
 blockchain = Blockchain()
 
+
 # Mining a new block
-@app.route('/mine_block', methods = ['GET'])
+@app.route('/mine_block', methods=['GET'])
 def mine_block():
     flag = blockchain.replace_chain()
     previous_block = blockchain.get_previous_block()
@@ -123,7 +126,7 @@ def mine_block():
     previous_hash = blockchain.hash(previous_block)
     block = blockchain.create_block(previous_hash)
     [block, cur_hash, flag] = blockchain.proof_of_work(block)
-    if flag :
+    if flag:
         blockchain.chain.append(block)
         # blockchain.add_transaction(sender = node_address, receiver = 'Hadelin', amount = 1)
         # block = blockchain.create_block(proof, previous_hash)
@@ -134,19 +137,21 @@ def mine_block():
                     'previous_hash': block['previous_hash'],
                     'transactions': block['transactions'],
                     'current_hash': cur_hash}
-    else :
+    else:
         response = {'message': 'Do not mined, but you could not mine'}
     return jsonify(response), 200
 
+
 # Getting the full Blockchain
-@app.route('/get_chain', methods = ['GET'])
+@app.route('/get_chain', methods=['GET'])
 def get_chain():
     response = {'chain': blockchain.chain,
                 'length': len(blockchain.chain)}
     return jsonify(response), 200
 
+
 # Checking if the Blockchain is valid
-@app.route('/is_valid', methods = ['GET'])
+@app.route('/is_valid', methods=['GET'])
 def is_valid():
     is_valid = blockchain.is_chain_valid(blockchain.chain)
     if is_valid:
@@ -155,8 +160,9 @@ def is_valid():
         response = {'message': 'We have a problem. The Blockchain is not valid.'}
     return jsonify(response), 200
 
+
 # Adding a new transaction to the Blockchain
-@app.route('/add_transaction', methods = ['POST'])
+@app.route('/add_transaction', methods=['POST'])
 def add_transaction():
     json = request.get_json()
     transaction_keys = ['Customer', 'Receiver', 'Order Details', 'Order Amount']
@@ -166,10 +172,11 @@ def add_transaction():
     response = {'message': f'This transaction will be added to Block {index}'}
     return jsonify(response), 201
 
+
 # Part 3 - Decentralizing our Blockchain
 
 # Connecting new nodes
-@app.route('/connect_node', methods = ['POST'])
+@app.route('/connect_node', methods=['POST'])
 def connect_node():
     json = request.get_json()
     nodes = json.get('nodes')
@@ -181,8 +188,9 @@ def connect_node():
                 'total_nodes': list(blockchain.nodes)}
     return jsonify(response), 201
 
+
 # Replacing the chain by the longest chain if needed
-@app.route('/replace_chain', methods = ['GET'])
+@app.route('/replace_chain', methods=['GET'])
 def replace_chain():
     is_chain_replaced = blockchain.replace_chain()
     if is_chain_replaced:
@@ -193,5 +201,6 @@ def replace_chain():
                     'actual_chain': blockchain.chain}
     return jsonify(response), 200
 
+
 # Running the app
-app.run(host = '127.0.0.1', port = 5000)
+app.run(host='127.0.0.1', port=5002)
