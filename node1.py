@@ -59,7 +59,7 @@ class Blockchain:
             block['proof'] = new_proof
             encoded_block = json.dumps(block, sort_keys=True).encode()
             hash_operation = hashlib.sha256(encoded_block).hexdigest()
-            if hash_operation[:4] == '0000':
+            if hash_operation[:4] == '000000':
                 check_proof = True
             else:
                 new_proof += 1
@@ -80,7 +80,7 @@ class Blockchain:
             # proof = block['proof']
             encoded_block = json.dumps(block, sort_keys=True).encode()
             hash_operation = hashlib.sha256(encoded_block).hexdigest()
-            if hash_operation[:4] != '0000':
+            if hash_operation[:4] != '000000':
                 return False
             previous_block = block
             block_index += 1

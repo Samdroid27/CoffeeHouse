@@ -39,6 +39,7 @@ class Blockchain:
     def get_previous_block(self):
         return self.chain[-1]
 
+
     def get_block(self, block_index):
         block = []
         if block_index > len(self.chain):
@@ -51,6 +52,7 @@ class Blockchain:
             return -1
         return self.chain[block_index - 1]['timestamp']
 
+
     def proof_of_work(self, block):
         new_proof = 1
         check_proof = False
@@ -59,7 +61,7 @@ class Blockchain:
             block['proof'] = new_proof
             encoded_block = json.dumps(block, sort_keys=True).encode()
             hash_operation = hashlib.sha256(encoded_block).hexdigest()
-            if hash_operation[:4] == '0000':
+            if hash_operation[:4] == '000000':
                 check_proof = True
             else:
                 new_proof += 1
@@ -80,7 +82,7 @@ class Blockchain:
             # proof = block['proof']
             encoded_block = json.dumps(block, sort_keys=True).encode()
             hash_operation = hashlib.sha256(encoded_block).hexdigest()
-            if hash_operation[:4] != '0000':
+            if hash_operation[:4] != '000000':
                 return False
             previous_block = block
             block_index += 1
@@ -191,7 +193,9 @@ def add_transaction():
     return jsonify(response), 201
 
 
+
 @app.route('/get_block', methods=['POST'])
+
 def get_block():
     json = request.get_json()
     block_index = json.get('index')
@@ -205,8 +209,8 @@ def get_block():
                     }
     return jsonify(response), 201
 
-
 @app.route('/get_timestamp', methods=['POST'])
+
 def get_timestamp():
     json = request.get_json()
     block_index = json.get('index')
