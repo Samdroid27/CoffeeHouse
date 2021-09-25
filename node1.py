@@ -18,7 +18,6 @@ import hashlib
 from uuid import uuid4
 from urllib.parse import urlparse
 
-
 # create Blockchain blueprint
 class Blockchain:
 
@@ -41,6 +40,7 @@ class Blockchain:
 
         # emptying the transaction pool after adding to the block
         self.transactions_pool = []
+
         if len(self.chain) == 0:
             self.chain.append(block)
         return block
@@ -143,7 +143,6 @@ node_address = str(uuid4()).replace('-', '')
 # creating an object of the Blockchain class
 blockchain = Blockchain()
 
-
 # making connections between the nodes
 # the nodes to be connected are provided in JSON format during API call
 @app.route('/make_connections', methods=['POST'])
@@ -200,11 +199,11 @@ def mine_block():
 
 # retrieving the complete chain details of the node provided
 @app.route('/get_node_chain', methods=['GET'])
+
 def get_node_chain():
     response = {'chain': blockchain.chain,
                 'length': len(blockchain.chain)}
     return jsonify(response), 200
-
 
 # display the complete chain details along with corresponding hash values for all blocks
 @app.route('/get_chain', methods=['GET'])
@@ -226,7 +225,6 @@ def is_valid():
     else:
         response = {'message': 'Invalid Blockchain'}
     return jsonify(response), 200
-
 
 # displaying the details of a specific block
 # block index is provided in JSON format during API call
@@ -257,7 +255,6 @@ def get_timestamp():
     else:
         response = {'Block timestamp': block_timestamp}
     return jsonify(response), 201
-
 
 # updating the chain to the latest chain in the network and displaying the updated chain
 @app.route('/update_chain', methods=['GET'])
